@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>egsy — journal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg2: #111114;
+      --bg3: #18181d;
+      --line: rgba(255,255,255,0.07);
+      --text: #e8e6e1;
+      --muted: #6b6870;
+      --accent: #c9a96e;
+      --accent2: #7c6fcd;
+      --red: #e05c5c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom Cursor */
+    .cursor {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease;
+      mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid rgba(201,169,110,0.4);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.4;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 24px 48px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid transparent;
+      transition: all 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(10,10,11,0.85);
+      backdrop-filter: blur(16px);
+      border-color: var(--line);
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 120px 48px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+    }
+    .hero-bg-circle.c1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(201,169,110,0.08) 0%, transparent 70%);
+      top: -100px; right: -100px;
+    }
+    .hero-bg-circle.c2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(124,111,205,0.07) 0%, transparent 70%);
+      bottom: -80px; left: 200px;
+    }
+    .hero-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hero-label::before {
+      content: '';
+      width: 32px; height: 1px;
+      background: var(--accent);
+    }
+    .hero-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.5rem, 7vw, 6rem);
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .hero-name .italic { font-style: italic; color: var(--accent); }
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      margin: 20px 0 36px;
+      max-width: 420px;
+      line-height: 1.8;
+    }
+    .hero-sub em { color: var(--text); font-style: normal; }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-cta::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+      z-index: -1;
+    }
+    .hero-cta:hover { color: var(--bg); }
+    .hero-cta:hover::before { transform: scaleX(1); }
+
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 20px;
+    }
+    .hero-stat-block {
+      border: 1px solid var(--line);
+      padding: 28px 32px;
+      background: var(--bg2);
+      position: relative;
+    }
+    .hero-stat-block::before {
+      content: attr(data-num);
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      color: rgba(201,169,110,0.12);
+      position: absolute;
+      top: 8px; right: 16px;
+      line-height: 1;
+    }
+    .hero-stat-block h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .hero-stat-block p {
+      font-size: 0.9rem;
+      color: var(--text);
+      max-width: 220px;
+    }
+
+    /* DIVIDER */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--line), var(--accent), var(--line), transparent);
+      margin: 0 48px;
+    }
+
+    /* ABOUT */
+    #about {
+      padding: 100px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 80px;
+      align-items: start;
+    }
+    .section-number {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 32px;
+    }
+    .section-title .italic { font-style: italic; color: var(--muted); }
+    .about-text p {
+      color: rgba(232,230,225,0.7);
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .about-text p strong { color: var(--text); font-weight: 500; }
+    .about-tags {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 32px;
+    }
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      padding: 6px 14px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      text-transform: uppercase;
+      transition: all 0.3s;
+    }
+    .tag:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* JOURNAL */
+    #journal {
+      padding: 100px 48px;
+      background: var(--bg2);
+    }
+    .journal-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 60px;
+    }
+    .view-all {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+      transition: color 0.3s;
+    }
+    .view-all:hover { color: var(--accent); }
+    .view-all::after { content: '→'; }
+
+    .journal-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 1px;
+      background: var(--line);
+    }
+    .journal-card {
+      background: var(--bg2);
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+      cursor: none;
+    }
+    .journal-card:hover { background: var(--bg3); }
+    .journal-card.featured {
+      grid-row: span 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 480px;
+      background: var(--bg3);
+    }
+    .journal-card.featured::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, rgba(201,169,110,0.04) 0%, transparent 60%);
+    }
+    .card-category {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .card-category.opinion { color: var(--accent); }
+    .card-category.psychology { color: var(--accent2); }
+    .card-category.thought { color: var(--red); }
+    .card-category::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .journal-card.featured .card-title { font-size: 1.6rem; }
+    .journal-card:not(.featured) .card-title { font-size: 1.05rem; }
+    .card-excerpt {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 24px;
+    }
+    .journal-card.featured .card-excerpt { display: block; }
+    .journal-card:not(.featured) .card-excerpt { display: none; }
+    .card-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: auto;
+    }
+    .card-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .card-read {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .journal-card:hover .card-read { opacity: 1; }
+    .card-read::after { content: ' →'; }
+    .card-num {
+      position: absolute;
+      top: 20px; right: 24px;
+      font-family: 'Playfair Display', serif;
+      font-size: 5rem;
+      color: rgba(255,255,255,0.02);
+      line-height: 1;
+      pointer-events: none;
+      font-style: italic;
+    }
+
+    /* WRITING CATEGORIES */
+    #categories {
+      padding: 80px 48px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--line);
+    }
+    .cat-block {
+      background: var(--bg);
+      padding: 40px 36px;
+      transition: background 0.3s;
+    }
+    .cat-block:hover { background: var(--bg3); }
+    .cat-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .cat-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+    }
+    .cat-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .cat-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-top: 20px;
+    }
+
+    /* CONTACT */
+    #contact {
+      padding: 100px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #contact::before {
+      content: 'CONNECT';
+      position: absolute;
+      font-family: 'Playfair Display', serif;
+      font-size: 16vw;
+      color: rgba(255,255,255,0.015);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      pointer-events: none;
+      font-style: italic;
+    }
+    .contact-inner { position: relative; z-index: 1; max-width: 540px; margin: 0 auto; }
+    .contact-tagline {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .contact-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+    .contact-title em { font-style: italic; color: var(--muted); }
+    .contact-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+    .contact-links {
+      display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+    }
+    .contact-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 13px 26px;
+      text-decoration: none;
+      border: 1px solid;
+      transition: all 0.3s ease;
+    }
+    .contact-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg);
+    }
+    .contact-btn.primary:hover { background: transparent; color: var(--accent); }
+    .contact-btn.secondary {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--muted);
+    }
+    .contact-btn.secondary:hover { border-color: var(--muted); color: var(--text); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 48px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    footer p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    footer p span { color: var(--accent); }
+
+    /* FADE IN ANIMATION */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      .nav-links { gap: 20px; }
+      #hero { grid-template-columns: 1fr; padding: 120px 24px 60px; gap: 40px; }
+      .hero-right { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+      #about { grid-template-columns: 1fr; padding: 60px 24px; gap: 32px; }
+      #journal { padding: 60px 24px; }
+      .journal-grid { grid-template-columns: 1fr; }
+      .journal-card.featured { min-height: 320px; }
+      .journal-card.featured .card-excerpt { display: block; }
+      #categories { grid-template-columns: 1fr; padding: 40px 24px; }
+      #contact { padding: 80px 24px; }
+      footer { padding: 20px 24px; flex-direction: column; gap: 12px; text-align: center; }
+      .section-divider { margin: 0 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <a href="#hero" class="nav-logo">eg<span>sy</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#journal">Journal</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg-circle c1"></div>
+    <div class="hero-bg-circle c2"></div>
+    <div class="hero-left">
+      <div class="hero-label">Mahasiswa · Bisnis & Ekonomi</div>
+      <h1 class="hero-name">
+        Halo, saya<br>
+        <span class="italic">Egsy.</span>
+      </h1>
+      <p class="hero-sub">
+        Saya menulis tentang <em>cara pikir manusia</em>, dinamika ekonomi, dan hal-hal yang membuat saya berhenti sejenak dan berpikir lebih dalam.
+      </p>
+      <a href="#journal" class="hero-cta">Baca Journal</a>
+    </div>
+    <div class="hero-right">
+      <div class="hero-stat-block" data-num="01">
+        <h4>Fokus Utama</h4>
+        <p>Psikologi perilaku & pengambilan keputusan</p>
+      </div>
+      <div class="hero-stat-block" data-num="02">
+        <h4>Bidang Studi</h4>
+        <p>Bisnis & Ekonomi — mencari irisan antara angka dan manusia</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-left fade-up">
+      <div class="section-number">// 01</div>
+      <h2 class="section-title">Tentang<br><span class="italic">Saya</span></h2>
+    </div>
+    <div class="about-text fade-up">
+      <p>Saya <strong>Egsy</strong>, mahasiswa bisnis yang terlalu sering memikirkan <strong>mengapa manusia berperilaku seperti itu</strong> — bukan hanya dalam pasar, tapi dalam kehidupan sehari-hari.</p>
+      <p>Journal ini adalah ruang saya untuk menjelajahi <strong>psikologi, opini, dan pemikiran-pemikiran yang belum selesai</strong>. Kadang tajam, kadang masih kasar — tapi selalu jujur.</p>
+      <p>Saya percaya bahwa memahami cara pikir manusia adalah fondasi dari segalanya: ekonomi, relasi, dan keputusan hidup.</p>
+      <div class="about-tags">
+        <span class="tag">Behavioral Economics</span>
+        <span class="tag">Psychology</span>
+        <span class="tag">Critical Thinking</span>
+        <span class="tag">Bisnis</span>
+        <span class="tag">Opini</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- JOURNAL -->
+  <section id="journal">
+    <div class="journal-header fade-up">
+      <div>
+        <div class="section-number">// 02</div>
+        <h2 class="section-title">Journal &<br><span class="italic">Tulisan</span></h2>
+      </div>
+      <a href="#" class="view-all">Semua Tulisan</a>
+    </div>
+
+    <div class="journal-grid fade-up">
+      <!-- Featured -->
+      <div class="journal-card featured">
+        <span class="card-num">01</span>
+        <span class="card-category psychology">Psikologi</span>
+        <h3 class="card-title">Kenapa Kita Lebih Takut Kehilangan daripada Senang Mendapat?</h3>
+        <p class="card-excerpt">Loss aversion — bias kognitif yang membuat rasa sakit kehilangan dua kali lebih kuat dari kesenangan mendapatkan hal yang sama. Dan ini mengubah segalanya, mulai dari keputusan investasi hingga alasan kita bertahan di hubungan yang sudah tidak sehat.</p>
+        <div class="card-meta">
+          <span class="card-date">Mar 2026</span>
+          <a href="#" class="card-read">Baca</a>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="journal-card">
+        <span class="card-num">02</span>
+        <span class="card-category opinion">Opini</span>
+        <h3 class="card-title">Produktivitas adalah Mitos yang Kita Jual ke Diri Sendiri</h3>
+        <div class="card-meta">
+          <span class="card-date">Feb 2026</span>
+          <a href="#" class="card-read">Baca</a>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="journal-card">
+        <span class="card-num">03</span>
+        <span class="card-category thought">Pemikiran</span>
+        <h3 class="card-title">Apakah Kita Benar-benar Memilih, atau Hanya Merasa Memilih?</h3>
+        <div class="card-meta">
+          <span class="card-date">Feb 2026</span>
+          <a href="#" class="card-read">Baca</a>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="journal-card">
+        <span class="card-num">04</span>
+        <span class="card-category psychology">Psikologi</span>
+        <h3 class="card-title">Social Proof dan Mengapa Keramaian Membuat Kita Mati Rasa</h3>
+        <div class="card-meta">
+          <span class="card-date">Jan 2026</span>
+          <a href="#" class="card-read">Baca</a>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="journal-card">
+        <span class="card-num">05</span>
+        <span class="card-category opinion">Opini</span>
+        <h3 class="card-title">Tentang Ambisi: Kapan Ia Jadi Bahan Bakar, Kapan Jadi Racun</h3>
+        <div class="card-meta">
+          <span class="card-date">Jan 2026</span>
+          <a href="#" class="card-read">Baca</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section id="categories">
+    <div class="cat-block fade-up">
+      <span class="cat-icon">🧠</span>
+      <h3 class="cat-name">Psikologi</h3>
+      <p class="cat-desc">Bias kognitif, perilaku manusia, dan cara pikir yang sering kita abaikan dalam kehidupan sehari-hari.</p>
+      <div class="cat-count">8 tulisan</div>
+    </div>
+    <div class="cat-block fade-up">
+      <span class="cat-icon">💬</span>
+      <h3 class="cat-name">Opini</h3>
+      <p class="cat-desc">Sudut pandang saya tentang fenomena sosial, budaya, dan hal-hal yang layak diperdebatkan.</p>
+      <div class="cat-count">5 tulisan</div>
+    </div>
+    <div class="cat-block fade-up">
+      <span class="cat-icon">💭</span>
+      <h3 class="cat-name">Pemikiran</h3>
+      <p class="cat-desc">Pertanyaan yang belum ada jawabannya, atau mungkin jawabannya bergantung pada siapa yang ditanya.</p>
+      <div class="cat-count">4 tulisan</div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-inner fade-up">
+      <div class="contact-tagline">// 03 — Let's Talk</div>
+      <h2 class="contact-title">Ada yang ingin<br><em>didiskusikan?</em></h2>
+      <p class="contact-desc">Saya senang berbicara tentang psikologi, bisnis, ide-ide aneh, atau sekadar bertukar perspektif.</p>
+      <div class="contact-links">
+        <a href="mailto:egsy@email.com" class="contact-btn primary">Kirim Email</a>
+        <a href="#" class="contact-btn secondary">Instagram</a>
+        <a href="#" class="contact-btn secondary">Twitter / X</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 <span>egsy</span></p>
+    <p>Dibuat dengan niat & kopi ☕</p>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.transform = `translate(${mx - 5}px, ${my - 5}px)`;
+    });
+    function animateRing() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.transform = `translate(${rx - 18}px, ${ry - 18}px)`;
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    // Nav scroll
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // Fade in observer
+    const fadeEls = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    fadeEls.forEach(el => observer.observe(el));
+
+    // Hero immediate
+    document.querySelector('#hero .hero-left')?.classList.add('visible');
+  </script>
+</body>
+</html>
